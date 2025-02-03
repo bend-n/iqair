@@ -1,0 +1,18 @@
+[package]
+name = "iqair"
+version = "0.1.1"
+authors = ["bend-n <bend.n@outlook.com>"]
+license = "MIT"
+edition = "2021"
+description = "IQAir api accessor crate"
+repository = "https://github.com/bend-n/iqair"
+exclude = ["tdata", "benches/", ".gitignore"]
+keywords = ["pollution", "api"]
+categories = ["command-line-utilities", "api-bindings"]
+
+[dependencies]
+serde = "1"
+serde_derive = "1.0.217"
+serde_json = "1.0.138"
+time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
+ureq = "3.0.4"
