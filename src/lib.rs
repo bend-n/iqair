@@ -1,6 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use time::OffsetDateTime;
+use url_escape::QUERY;
 
 #[derive(Debug, Deserialize)]
 struct Dat {
@@ -160,19 +161,7 @@ impl std::error::Error for Error {
     }
 }
 
-/// Get pollution data for nearest city.
-pub fn nearest(key: &str) -> std::result::Result<Data, Error> {
-    let uri = format!("https://api.airvisual.com/v2/nearest_city?key={key}");
-    let mut result = String::with_capacity(50);
-    std::io::Read::read_to_string(
-        &mut ureq::get(uri)
-            .call()
-            .map_err(Error::Ureq)?
-            .body_mut()
-            .as_reader(),
-        &mut result,
-    )
-    .map_err(Error::Io)?;
+fn decode_resp(result: &str) -> std::result::Result<Data, Error> {
     #[derive(Deserialize)]
     struct Status {
         status: Error,
@@ -186,7 +175,34 @@ pub fn nearest(key: &str) -> std::result::Result<Data, Error> {
         .map(|Dat { data }| data)
 }
 
-#[test]
-fn x() {
-    dbg!(nearest("294e67bb-404b-41b5-a73d-60bb71f361f2").unwrap());
+fn from_uri(uri: &str) -> std::result::Result<Data, Error> {
+    let mut result = String::with_capacity(50);
+    std::io::Read::read_to_string(
+        &mut ureq::get(dbg!(url_escape::encode(uri, QUERY).into_owned()))
+            .call()
+            .map_err(Error::Ureq)?
+            .body_mut()
+            .as_reader(),
+        &mut result,
+    )
+    .map_err(Error::Io)?;
+    decode_resp(&result)
+}
+
+pub fn by_location(
+    city: &str,
+    state: &str,
+    country: &str,
+    key: &str,
+) -> std::result::Result<Data, Error> {
+    from_uri(&format!(
+        "https://api.airvisual.com/v2/city?city={city}&state={state}&country={country}&key={key}"
+    ))
+}
+
+/// Get pollution data for nearest city.
+pub fn nearest(key: &str) -> std::result::Result<Data, Error> {
+    from_uri(&format!(
+        "https://api.airvisual.com/v2/nearest_city?key={key}"
+    ))
 }
